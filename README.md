@@ -7,8 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://mee344-g05-stlf.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-Vercel-00C9A7?style=flat-square" alt="Live Demo"/></a>
-  <a href="https://github.com/XGami/mee344-g05-stlf"><img src="https://img.shields.io/badge/GitHub-Repo-0B1F3A?style=flat-square&logo=github" alt="GitHub"/></a>
+  <a href="https://mee344-g05-stlf.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-mee344--g05--stlf.vercel.app-00C9A7?style=flat-square" alt="Live Demo"/></a>
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
   <img src="https://img.shields.io/badge/scikit--learn-1.3+-F7931E?style=flat-square" alt="sklearn"/>
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT"/>
@@ -67,7 +66,7 @@ Detay: [`reports/metrics.json`](reports/metrics.json) · Rapor: [`reports/final_
 ## Hızlı başlangıç
 
 ```bash
-git clone https://github.com/XGami/mee344-g05-stlf.git
+git clone <GITHUB_REPO_URL>
 cd mee344-g05-stlf
 py -3 -m pip install -r requirements.txt
 py -3 scripts/run_all.py          # veri + eğitim + figürler + pptx

@@ -10,7 +10,10 @@ env/
 data/interim/
 data/processed/
 # Keep trained models for submission
-reports/metrics.json
+# metrics.json commit edilir (Vercel / README)
 reports/figures/*.png
 !reports/figures/.gitkeep
 *.log
+.vercel/
+
+.vercel

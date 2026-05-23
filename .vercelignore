@@ -1,0 +1,10 @@
+notebooks/
+slides/
+reports/figures/
+reports/final_report_copy.md
+dashboard/
+scripts/
+.git/
+__pycache__/
+*.ipynb_checkpoints/
+.pytest_cache/

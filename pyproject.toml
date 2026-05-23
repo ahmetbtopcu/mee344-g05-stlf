@@ -1,0 +1,8 @@
+[project]
+name = "mee344-g05-stlf"
+version = "1.0.0"
+description = "MEE344 G05 — Hourly electricity consumption forecasting"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,20 @@
+{
+  "decision_tree": {
+    "params": {
+      "max_depth": 8,
+      "max_features": null,
+      "min_samples_leaf": 2,
+      "min_samples_split": 2
+    },
+    "cv_rmse": 1472.5033292404999
+  },
+  "adaboost": {
+    "params": {
+      "estimator__max_depth": 8,
+      "learning_rate": 1.0,
+      "loss": "square",
+      "n_estimators": 200
+    },
+    "cv_rmse": 1079.3275820580432
+  }
+}

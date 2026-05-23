@@ -10,6 +10,7 @@ plotly>=5.18.0
 missingno>=0.5.2
 statsmodels>=0.14.0
 python-pptx>=0.6.23
+qrcode[pil]>=7.4.0
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.0.0

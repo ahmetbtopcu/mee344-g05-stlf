@@ -38,6 +38,9 @@ CT = HEADER + Inches(0.15)
 FIG = FIGURES_DIR / "presentation"
 BG = ROOT / "assets" / "backgrounds"
 
+LIVE_DEMO_URL = "https://mee344-g05-stlf.vercel.app"
+GITHUB_REPO_URL = "https://github.com/ahmetbtopcu/mee344-g05-stlf"
+
 MEMBERS = [
     "Berhan Kaya", "Ahmet Bayram Topçu", "Yusuf Duman",
     "Furkan Efe Demirbel", "Tekgül Eroğlu",
@@ -85,6 +88,57 @@ def txt(sl, l, t, w, h, text, size=14, bold=False, color=C_SLATE, align=PP_ALIGN
     p.alignment = align
     tb.text_frame.word_wrap = True
     return tb
+
+
+def txt_link(
+    sl,
+    l,
+    t,
+    w,
+    h,
+    text: str,
+    url: str,
+    size=11,
+    bold=False,
+    color=C_NAVY,
+    align=PP_ALIGN.CENTER,
+    italic=False,
+):
+    """Text box with clickable hyperlink (opens in browser in Slide Show)."""
+    tb = sl.shapes.add_textbox(l, t, w, h)
+    tf = tb.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = align
+    run = p.add_run()
+    run.text = text
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.italic = italic
+    run.font.color.rgb = color
+    run.font.underline = True
+    run.hyperlink.address = url
+    return tb
+
+
+def hyperlink_shape(sl, l, t, w, h, url: str):
+    """Invisible click target (e.g. over QR code)."""
+    sh = sl.shapes.add_shape(MSO_SHAPE.RECTANGLE, l, t, w, h)
+    sh.fill.background()
+    sh.line.fill.background()
+    sh.click_action.hyperlink.address = url
+    return sh
+
+
+def ensure_qr_png(path: Path, url: str) -> bool:
+    try:
+        import qrcode
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        qrcode.make(url).save(path)
+        return True
+    except ImportError:
+        return False
 
 
 def bg_image(sl, path: Path):
@@ -234,25 +288,64 @@ def content(prs, title, sub, items, img_name, img_w=Inches(6)):
 
 def slide_web_demo(prs):
     s = blank(prs)
-    header(s, "Canlı Tahmin — Web Demo", "FastAPI · Tarayıcıda çalışan ML")
+    header(s, "Live Forecast — Web Demo", "FastAPI · ML in the browser")
     footer(s)
-    shots = [
-        ("web_overview.png", "Ana panel"),
-        ("web_backtest.png", "Backtest"),
-        ("web_forecast.png", "İleri tahmin"),
-    ]
-    w = Inches(3.9)
-    for i, (fname, cap) in enumerate(shots):
-        left = M + i * (w + Inches(0.2))
-        p = ROOT / "assets" / "screenshots" / fname
-        if p.exists():
-            pic(s, p, left, CT + Inches(0.1), w)
-        else:
-            rnd(s, left, CT + Inches(0.5), w, Inches(2.5), C_CARD)
-            txt(s, left, CT + Inches(1.4), w, Inches(0.4), cap, 12, False, C_SLATE, PP_ALIGN.CENTER)
-        txt(s, left, CT + Inches(3.0), w, Inches(0.3), cap, 10, False, C_SLATE, PP_ALIGN.CENTER)
-    rnd(s, M, Inches(5.8), Inches(4), Inches(0.45), C_TEAL)
-    txt(s, M + Inches(0.12), Inches(5.88), Inches(3.8), Inches(0.35), "Hiçbir grupta yok — canlı API + grafik", 10, True, C_NAVY)
+
+    qr_path = ROOT / "assets" / "qr_live_demo.png"
+    ensure_qr_png(qr_path, LIVE_DEMO_URL)
+
+    qr_size = Inches(2.75)
+    qr_left = (SW - qr_size) / 2
+    qr_top = CT + Inches(0.25)
+    if qr_path.exists():
+        pic(s, qr_path, qr_left, qr_top, qr_size)
+        hyperlink_shape(s, qr_left, qr_top, qr_size, qr_size, LIVE_DEMO_URL)
+
+    box_w = Inches(5.55)
+    box_h = Inches(0.72)
+    box_top = qr_top + qr_size + Inches(0.4)
+
+    left_x = M
+    rnd(s, left_x, box_top, box_w, box_h, C_TEAL)
+    txt_link(
+        s,
+        left_x + Inches(0.12),
+        box_top + Inches(0.1),
+        box_w - Inches(0.24),
+        box_h - Inches(0.15),
+        "You can scan the QR code to experience the live site for yourself",
+        LIVE_DEMO_URL,
+        size=11,
+        italic=True,
+    )
+
+    right_x = SW - M - box_w
+    rnd(s, right_x, box_top, box_w, box_h, C_TEAL)
+    txt_link(
+        s,
+        right_x + Inches(0.12),
+        box_top + Inches(0.18),
+        box_w - Inches(0.24),
+        box_h - Inches(0.2),
+        GITHUB_REPO_URL,
+        GITHUB_REPO_URL,
+        size=10,
+    )
+
+    badge_top = box_top + box_h + Inches(0.35)
+    rnd(s, (SW - Inches(4.2)) / 2, badge_top, Inches(4.2), Inches(0.42), C_TEAL)
+    txt(
+        s,
+        (SW - Inches(4)) / 2,
+        badge_top + Inches(0.06),
+        Inches(4),
+        Inches(0.32),
+        "Hiçbir grupta yok — canlı API + grafik",
+        10,
+        True,
+        C_NAVY,
+        PP_ALIGN.CENTER,
+    )
 
 
 def slide_thanks(prs):
@@ -261,7 +354,30 @@ def slide_thanks(prs):
     txt(s, M, Inches(2.6), SW - 2 * M, Inches(0.9), "Teşekkürler", 48, True, C_WHITE, PP_ALIGN.CENTER)
     txt(s, M, Inches(3.6), SW - 2 * M, Inches(0.5), "Sorularınız?", 28, False, C_TEAL, PP_ALIGN.CENTER)
     txt(s, M, Inches(4.5), SW - 2 * M, Inches(1), "\n".join(MEMBERS), 12, False, C_SKY, PP_ALIGN.CENTER)
-    txt(s, M, Inches(6.2), SW - 2 * M, Inches(0.35), "github.com · mee344-g05-stlf", 11, False, C_WHITE, PP_ALIGN.CENTER)
+
+    link_top = Inches(5.85)
+    txt_link(
+        s,
+        M,
+        link_top,
+        SW - 2 * M,
+        Inches(0.35),
+        f"Live demo: {LIVE_DEMO_URL}",
+        LIVE_DEMO_URL,
+        size=11,
+        color=C_WHITE,
+    )
+    txt_link(
+        s,
+        M,
+        link_top + Inches(0.42),
+        SW - 2 * M,
+        Inches(0.35),
+        f"GitHub: {GITHUB_REPO_URL}",
+        GITHUB_REPO_URL,
+        size=11,
+        color=C_SKY,
+    )
 
 
 def metrics_table_slide(prs, metrics):

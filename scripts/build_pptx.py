@@ -174,6 +174,56 @@ def slide_agenda(prs):
         txt(s, SW - Inches(1.8), top + Inches(0.28), Inches(1.2), Inches(0.35), dur, 11, False, C_SKY, PP_ALIGN.RIGHT)
 
 
+def slide_model_importance(prs, test: dict) -> None:
+    """Decision Tree + AdaBoost — sol metin, sağda importance grafikleri."""
+    s = blank(prs)
+    dt, ada = test["decision_tree"], test["adaboost"]
+    imp_pct = (1 - ada["rmse"] / dt["rmse"]) * 100
+    header(
+        s,
+        "Decision Tree & AdaBoost",
+        f"Test RMSE DT {dt['rmse']:.0f} MWh · AdaBoost {ada['rmse']:.0f} MWh",
+    )
+    footer(s)
+    rnd(s, M, CT, Inches(5.55), Inches(5.35), C_OFF)
+    bullets(
+        s,
+        M + Inches(0.15),
+        CT + Inches(0.12),
+        Inches(5.25),
+        Inches(5.1),
+        [
+            "Decision Tree — tek ağaç, yorumlanabilir baseline",
+            "Neredeyse tüm karar: lag_168h (geçen hafta aynı saat)",
+            "lag_1h ikincil; üretim / saat özellikleri düşük MDI",
+            "",
+            "AdaBoost — 200 zayıf öğrenici → güçlü ensemble",
+            "lag_168h + lag_1h birlikte (haftalık + saatlik döngü)",
+            f"RMSE: {dt['rmse']:.0f} → {ada['rmse']:.0f} MWh (~%{imp_pct:.0f} iyileşme)",
+            f"R²: {dt['r2']:.3f} → {ada['r2']:.3f} · MAPE {ada['mape']:.2f}%",
+        ],
+        11,
+    )
+    panel = FIG / "dt_ada_importance_panel.png"
+    if panel.exists():
+        pic(s, panel, Inches(5.95), CT - Inches(0.05), Inches(7.0))
+    else:
+        pic(s, FIG / "dt_importance.png", Inches(6.1), CT, Inches(6.9))
+        pic(s, FIG / "ada_importance.png", Inches(6.1), CT + Inches(2.75), Inches(6.9))
+        txt(
+            s,
+            Inches(6.1),
+            CT + Inches(2.48),
+            Inches(6.9),
+            Inches(0.25),
+            "Üst: Decision Tree · Alt: AdaBoost — özellik önemi (MDI)",
+            9,
+            False,
+            C_SLATE,
+            PP_ALIGN.CENTER,
+        )
+
+
 def content(prs, title, sub, items, img_name, img_w=Inches(6)):
     s = blank(prs)
     header(s, title, sub)
@@ -330,12 +380,7 @@ def main():
     section(prs, "04", "Sonuçlar", "Test performansı", "bg_section_04.png")
     kpi_dashboard(prs, metrics)
     metrics_table_slide(prs, metrics)
-    content(prs, "Decision Tree", f"Test RMSE {test['decision_tree']['rmse']:.0f} MWh",
-            [f"R² = {test['decision_tree']['r2']:.3f}", "max_depth=8", "Baseline üstü"],
-             "dt_importance.png")
-    content(prs, "AdaBoost", f"Test RMSE {test['adaboost']['rmse']:.0f} MWh — en iyi",
-            [f"R² = {test['adaboost']['r2']:.3f}", "MAPE 1.67%", "DT'ye göre ~21% RMSE iyileşme"],
-             "ada_importance.png")
+    slide_model_importance(prs, test)
     s = blank(prs)
     header(s, "Tahmin Kalitesi", "14 günlük hold-out")
     footer(s)
@@ -355,7 +400,12 @@ def main():
 
     SLIDES_DIR.mkdir(parents=True, exist_ok=True)
     out = SLIDES_DIR / "G05_STLF_DT_AdaBoost.pptx"
-    prs.save(out)
+    try:
+        prs.save(out)
+    except PermissionError:
+        out = SLIDES_DIR / "G05_STLF_DT_AdaBoost_NEW.pptx"
+        prs.save(out)
+        print("Ana dosya açık — yeni dosyaya kaydedildi.")
     print(f"Saved {len(prs.slides)} slides -> {out}")
 
 

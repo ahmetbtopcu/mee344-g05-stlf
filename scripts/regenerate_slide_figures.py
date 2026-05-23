@@ -23,6 +23,91 @@ from mee344_g05.ppt_theme import MPL_RC, NAVY, SKY, TEAL, AMBER, OFF_WHITE
 
 OUT = FIGURES_DIR / "presentation"
 
+# Sunum için okunabilir Türkçe etiketler
+FEATURE_LABELS = {
+    "lag_168h": "1 hafta önce (168h)",
+    "lag_1h": "1 saat önce",
+    "lag_2h": "2 saat önce",
+    "lag_3h": "3 saat önce",
+    "lag_24h": "24 saat önce",
+    "hour_cos": "Saat (cos)",
+    "hour_sin": "Saat (sin)",
+    "dow_sin": "Gün (sin)",
+    "dow_cos": "Gün (cos)",
+    "doy_sin": "Yıl günü (sin)",
+    "prod_solar": "Güneş üretimi",
+    "prod_thermal": "Termik üretim",
+    "prod_wind": "Rüzgar üretimi",
+    "roll_min_24h": "24h min (kayan)",
+    "roll_mean_24h": "24h ort. (kayan)",
+    "roll_mean_168h": "168h ort. (kayan)",
+    "ithal_komur": "İthal kömür",
+    "net_balance": "Net denge",
+    "is_weekend": "Hafta sonu",
+    "is_holiday": "Resmi tatil",
+}
+
+
+def _label_feature(name: str) -> str:
+    return FEATURE_LABELS.get(name, name.replace("_", " "))
+
+
+def _annotate_importance(ax, imp: pd.Series, color: str) -> None:
+    """Üst çubuklara değer ve kısa açıklama yaz."""
+    top = imp.sort_values(ascending=False).head(2)
+    for feat, val in top.items():
+        y_idx = list(imp.index).index(feat)
+        pct = val / imp.sum() * 100
+        ax.text(
+            val + imp.max() * 0.02,
+            y_idx,
+            f" %{pct:.0f}",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=NAVY,
+        )
+    # En baskın özellik için ok + kutu
+    top_feat = top.index[0]
+    y0 = list(imp.index).index(top_feat)
+    note = "Geçen hafta\naynı saat" if top_feat == "lag_168h" else _label_feature(top_feat)
+    ax.annotate(
+        note,
+        xy=(top.iloc[0], y0),
+        xytext=(top.iloc[0] * 0.55, y0 + 1.8),
+        fontsize=9,
+        color=NAVY,
+        bbox=dict(boxstyle="round,pad=0.35", fc="white", ec=color, lw=1.5, alpha=0.95),
+        arrowprops=dict(arrowstyle="->", color=color, lw=1.2),
+    )
+
+
+def plot_importance(key: str, out: str, title_tr: str, bar_color: str) -> None:
+    b = joblib.load(MODELS_DIR / f"{key}.joblib")
+    m = b["model"]
+    cols = b["feature_columns"]
+    if not hasattr(m, "feature_importances_"):
+        return
+    imp_raw = pd.Series(m.feature_importances_, index=cols).sort_values().tail(12)
+    imp = imp_raw.rename(index=_label_feature)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    imp.plot(kind="barh", ax=ax, color=bar_color)
+    ax.set_title(title_tr, fontweight="bold", fontsize=13)
+    ax.set_xlabel("Önem skoru (MDI — ne kadar bölünürse o kadar etkili)", fontsize=10)
+    ax.set_ylabel("")
+    ax.grid(axis="x", alpha=0.25, linestyle="--")
+    _annotate_importance(ax, imp_raw, bar_color)
+    fig.text(
+        0.5,
+        0.01,
+        "Yüksek çubuk = tahminde daha fazla kullanılan özellik · Lag = geçmiş tüketim (sızıntı yok)",
+        ha="center",
+        fontsize=8.5,
+        color="#475569",
+        style="italic",
+    )
+    savefig(out)
+
 
 def apply_style():
     plt.rcParams.update(MPL_RC)
@@ -123,17 +208,57 @@ def main():
     fig.suptitle("Test Set — Actual vs Predicted", fontweight="bold")
     savefig("actual_vs_pred_both.png")
 
-    # 7 Importance
-    for key, out in [("decision_tree", "dt_importance.png"), ("adaboost", "ada_importance.png")]:
+    # 7 Importance (Türkçe etiket + açıklama)
+    metrics = json.loads((REPORTS_DIR / "metrics.json").read_text(encoding="utf-8"))
+    dt_rmse = metrics["test"]["decision_tree"]["rmse"]
+    ada_rmse = metrics["test"]["adaboost"]["rmse"]
+    plot_importance(
+        "decision_tree",
+        "dt_importance.png",
+        f"Decision Tree — Özellik önemi  ·  Test RMSE {dt_rmse:.0f} MWh",
+        SKY,
+    )
+    plot_importance(
+        "adaboost",
+        "ada_importance.png",
+        f"AdaBoost — Özellik önemi  ·  Test RMSE {ada_rmse:.0f} MWh (en iyi)",
+        TEAL,
+    )
+
+    # İki grafik tek panel (slayt sağ yarı)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 9))
+    for ax, key, title_tr, bar_color in [
+        (axes[0], "decision_tree", f"Decision Tree — RMSE {dt_rmse:.0f} MWh", SKY),
+        (axes[1], "adaboost", f"AdaBoost — RMSE {ada_rmse:.0f} MWh", TEAL),
+    ]:
         b = joblib.load(MODELS_DIR / f"{key}.joblib")
-        m = b["model"]
-        cols = b["feature_columns"]
-        if hasattr(m, "feature_importances_"):
-            imp = pd.Series(m.feature_importances_, index=cols).sort_values().tail(12)
-            fig, ax = plt.subplots(figsize=(9, 5))
-            imp.plot(kind="barh", ax=ax, color=TEAL if "ada" in out else SKY)
-            ax.set_title(f"{key.replace('_', ' ').title()} — Feature Importance", fontweight="bold")
-            savefig(out)
+        imp_raw = pd.Series(b["model"].feature_importances_, index=b["feature_columns"]).sort_values().tail(10)
+        imp = imp_raw.rename(index=_label_feature)
+        imp.plot(kind="barh", ax=ax, color=bar_color)
+        ax.set_title(title_tr, fontweight="bold", fontsize=11)
+        ax.set_xlabel("Önem (MDI)", fontsize=9)
+        ax.grid(axis="x", alpha=0.2, linestyle="--")
+        top = imp_raw.sort_values(ascending=False).head(1)
+        ax.text(
+            0.98,
+            0.08,
+            f"En güçlü: {_label_feature(top.index[0])}\n(%{top.iloc[0] / imp_raw.sum() * 100:.0f} katkı)",
+            transform=ax.transAxes,
+            ha="right",
+            va="bottom",
+            fontsize=8.5,
+            bbox=dict(boxstyle="round", fc="white", ec=bar_color, alpha=0.9),
+        )
+    fig.suptitle("Hangi özellikler tüketimi taşıyor?", fontweight="bold", fontsize=13, y=0.98)
+    fig.text(
+        0.5,
+        0.01,
+        "Her iki modelde lag_168h (1 hafta) baskın; AdaBoost lag_1h’i de aktif kullanır → daha düşük hata",
+        ha="center",
+        fontsize=9,
+        color="#475569",
+    )
+    savefig("dt_ada_importance_panel.png")
 
     # Copy interpretation if exists
     for src, dst in [

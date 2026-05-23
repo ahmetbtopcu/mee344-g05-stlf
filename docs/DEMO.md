@@ -31,16 +31,6 @@ py -3 scripts/run_all.py
 | Tema | Açık / koyu (localStorage) |
 | API | `/docs` — Swagger |
 
-## Ekran görüntüleri (README / slayt)
-
-```bash
-py -3 scripts/run_server.py
-# başka terminal:
-py -3 scripts/capture_screenshots.py
-```
-
-Çıktı: `assets/screenshots/web_overview.png`, `web_backtest.png`, `web_forecast.png`
-
 ## Vercel (canlı)
 
 Bkz. [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md). Statik arayüz `public/`; API `api/index.py`.

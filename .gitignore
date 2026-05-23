@@ -9,11 +9,11 @@ env/
 .DS_Store
 data/interim/
 data/processed/
-# Keep trained models for submission
-# metrics.json commit edilir (Vercel / README)
-reports/figures/*.png
-!reports/figures/.gitkeep
 *.log
 .vercel/
 
-.vercel
+# Yerel üretilen görseller / sunum yardımcıları (repoda tutulmaz)
+assets/
+reports/figures/**
+!reports/figures/.gitkeep
+slides/*_NEW.pptx

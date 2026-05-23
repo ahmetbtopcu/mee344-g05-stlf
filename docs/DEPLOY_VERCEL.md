@@ -42,7 +42,8 @@ vercel --prod
 |------|-----|
 | `public/index.html` | Statik arayüz |
 | `api/index.py` | FastAPI (tahmin API) |
-| `vercel.json` | Rewrite + 3GB RAM function |
+| `vercel.json` | Rewrite + `includeFiles` (models, data, metrics) |
+| `pyproject.toml` | Vercel `uv` bağımlılıkları (fastapi vb.) |
 
 ### Notlar
 
